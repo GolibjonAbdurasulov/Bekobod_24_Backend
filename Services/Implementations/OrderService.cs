@@ -144,10 +144,108 @@ public class OrderService : IOrderService
         order.Status = OrderStatus.Delivered;
         order.DeliveredAt = DateTime.UtcNow;
 
+        var courier = await _db.Couriers.FirstOrDefaultAsync(c => c.UserId == order.CourierId);
+        if (courier != null)
+        {
+            courier.IsAvailable = true;
+            courier.TotalDeliveries++;
+        }
+
         await _db.SaveChangesAsync();
 
         return await GetByIdAsync(orderId)
             ?? throw new Exception("Xatolik");
+    }
+
+    public async Task<List<OrderResponse>> GetByCourierAsync(Guid courierId)
+    {
+        var orders = await _db.Orders
+            .Include(o => o.Client)
+            .Include(o => o.Courier)
+            .Include(o => o.Store)
+            .Where(o => o.CourierId == courierId)
+            .OrderByDescending(o => o.CreatedAt)
+            .ToListAsync();
+
+        var orderIds = orders.Select(o => o.Id).ToList();
+        var items = await _db.OrderItems
+            .Where(i => orderIds.Contains(i.OrderId))
+            .ToListAsync();
+
+        var grouped = items.GroupBy(i => i.OrderId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        return orders.Select(o => MapToResponse(o,
+            grouped.GetValueOrDefault(o.Id, new List<OrderItem>()))).ToList();
+    }
+
+    public async Task<List<OrderResponse>> GetAvailableForCourierAsync()
+    {
+        var orders = await _db.Orders
+            .Include(o => o.Client)
+            .Include(o => o.Courier)
+            .Include(o => o.Store)
+            .Where(o => o.Status == OrderStatus.New)
+            .OrderByDescending(o => o.CreatedAt)
+            .ToListAsync();
+
+        var orderIds = orders.Select(o => o.Id).ToList();
+        var items = await _db.OrderItems
+            .Where(i => orderIds.Contains(i.OrderId))
+            .ToListAsync();
+
+        var grouped = items.GroupBy(i => i.OrderId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        return orders.Select(o => MapToResponse(o,
+            grouped.GetValueOrDefault(o.Id, new List<OrderItem>()))).ToList();
+    }
+
+    public async Task<OrderResponse> AcceptByCourierAsync(Guid orderId, Guid courierId)
+    {
+        var order = await _db.Orders.FindAsync(orderId)
+            ?? throw new NotFoundException("Buyurtma topilmadi");
+
+        if (order.Status != OrderStatus.New)
+            throw new NotAllowedException("Buyurtma allaqachon qabul qilingan");
+
+        var courier = await _db.Couriers
+            .FirstOrDefaultAsync(c => c.UserId == courierId)
+            ?? throw new NotFoundException("Kuryer topilmadi");
+
+        if (!courier.IsAvailable)
+            throw new NotAllowedException("Siz band qilib belgilangansiz");
+
+        order.CourierId = courier.UserId;
+        order.Status = OrderStatus.OutForDelivery;
+        courier.IsAvailable = false;
+
+        await _db.SaveChangesAsync();
+
+        return await GetByIdAsync(orderId)
+            ?? throw new Exception("Xatolik");
+    }
+
+    public async Task<List<OrderResponse>> GetCourierHistoryAsync(Guid courierId)
+    {
+        var orders = await _db.Orders
+            .Include(o => o.Client)
+            .Include(o => o.Courier)
+            .Include(o => o.Store)
+            .Where(o => o.CourierId == courierId && o.Status == OrderStatus.Delivered)
+            .OrderByDescending(o => o.DeliveredAt)
+            .ToListAsync();
+
+        var orderIds = orders.Select(o => o.Id).ToList();
+        var items = await _db.OrderItems
+            .Where(i => orderIds.Contains(i.OrderId))
+            .ToListAsync();
+
+        var grouped = items.GroupBy(i => i.OrderId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        return orders.Select(o => MapToResponse(o,
+            grouped.GetValueOrDefault(o.Id, new List<OrderItem>()))).ToList();
     }
 
     private static OrderResponse MapToResponse(Order order, List<OrderItem> items)

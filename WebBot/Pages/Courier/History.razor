@@ -1,0 +1,75 @@
+@page "/courier/history"
+@inject ApiService Api
+@inject AuthState Auth
+@inject NavigationManager Nav
+
+<PageTitle>Delivery History - Bekobod 24</PageTitle>
+
+<div class="page">
+    @if (!Auth.IsCourier)
+    {
+        <div class="empty-state">
+            <p>Please log in as courier</p>
+            <a href="/courier" class="btn btn-primary" style="margin-top:8px;">Login</a>
+        </div>
+        return;
+    }
+
+    <a href="/courier/dashboard" class="back-link">&larr; Dashboard</a>
+    <h1 class="page-title">Delivery History</h1>
+
+    @if (loading)
+    {
+        <div class="loading">Loading...</div>
+    }
+    else if (orders.Count == 0)
+    {
+        <div class="empty-state">
+            <div class="icon">&#128230;</div>
+            <p>No deliveries yet</p>
+        </div>
+    }
+    else
+    {
+        @foreach (var order in orders)
+        {
+            <div class="order-card">
+                <div class="order-header">
+                    <span class="order-number">#@order.OrderNumber</span>
+                    <span class="status status-@order.Status.ToLower()">@order.Status</span>
+                </div>
+                <div style="font-size:13px;color:var(--text-secondary);">Store: @order.StoreName</div>
+                <div style="font-size:13px;color:var(--text-secondary);">&#127968; @order.DeliveryAddress &middot; @order.ClientName</div>
+                <div style="display:flex;justify-content:space-between;margin-top:6px;font-weight:600;">
+                    <span>@order.CreatedAt.ToString("dd.MM.yyyy HH:mm")</span>
+                    <span style="color:var(--primary);">@order.TotalAmount.ToString("N0") so'm</span>
+                </div>
+                @if (order.DeliveredAt.HasValue)
+                {
+                    <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">
+                        Delivered: @order.DeliveredAt.Value.ToString("dd.MM.yyyy HH:mm")
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<Order> orders = new();
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Auth.IsCourier) { loading = false; return; }
+
+        try
+        {
+            orders = await Api.GetCourierHistoryAsync();
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}

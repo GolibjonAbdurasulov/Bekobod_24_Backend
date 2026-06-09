@@ -1,5 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+# 
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "Core\Core.csproj", "{9686DBF9-DF35-4DDD-8F93-1A53075A11AA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure", "Infrastructure\Infrastructure.csproj", "{2233D42C-A670-4B0E-8295-C2647140AB6D}"
@@ -7,6 +8,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services", "Services\Services.csproj", "{781AA719-3E93-4612-A95F-A1708CB70CCB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebAPI", "WebAPI\WebAPI.csproj", "{94CE4825-2B24-490E-8DB9-0F381A03CEB4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebBot", "WebBot\WebBot.csproj", "{F3698F3A-1CBF-445D-B774-7C92870F8066}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,5 +33,9 @@ Global
 		{94CE4825-2B24-490E-8DB9-0F381A03CEB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{94CE4825-2B24-490E-8DB9-0F381A03CEB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{94CE4825-2B24-490E-8DB9-0F381A03CEB4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F3698F3A-1CBF-445D-B774-7C92870F8066}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F3698F3A-1CBF-445D-B774-7C92870F8066}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F3698F3A-1CBF-445D-B774-7C92870F8066}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F3698F3A-1CBF-445D-B774-7C92870F8066}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

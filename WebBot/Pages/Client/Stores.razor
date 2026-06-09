@@ -1,0 +1,66 @@
+@page "/stores/{StoreTypeId}/{StoreTypeName}"
+@inject ApiService Api
+@inject NavigationManager Nav
+
+<PageTitle>@StoreTypeName - Bekobod 24</PageTitle>
+
+<div class="page">
+    <a href="/" class="back-link">&larr; Back</a>
+    <h1 class="page-title">@StoreTypeName</h1>
+
+    @if (loading)
+    {
+        <div class="loading">Loading...</div>
+    }
+    else if (stores.Count == 0)
+    {
+        <div class="empty-state">
+            <div class="icon">&#128532;</div>
+            <p>No stores found</p>
+        </div>
+    }
+    else
+    {
+        @foreach (var store in stores)
+        {
+            <div class="store-card" @onclick="() => Select(store)">
+                <img src="@(store.ImageUrl ?? $"https://picsum.photos/seed/{store.Id}/400/400")" alt="@store.Name" loading="lazy" />
+                <div class="info">
+                    <div class="name">@store.Name</div>
+                    <div class="meta">@store.Address</div>
+                    @if (!string.IsNullOrEmpty(store.Phone))
+                    {
+                        <div class="meta">&#128222; @store.Phone</div>
+                    }
+                    <div class="rating">&#9733; @store.Rating.ToString("F1")</div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public string StoreTypeId { get; set; } = "";
+    [Parameter] public string StoreTypeName { get; set; } = "";
+
+    private List<Store> stores = new();
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            if (Guid.TryParse(StoreTypeId, out var id))
+                stores = await Api.GetStoresAsync(id);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void Select(Store store)
+    {
+        Nav.NavigateTo($"/products/{store.Id}/{Uri.EscapeDataString(store.Name)}");
+    }
+}

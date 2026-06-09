@@ -30,5 +30,10 @@ public class StoreConfiguration : IEntityTypeConfiguration<Store>
             .WithMany()
             .HasForeignKey(s => s.StoreTypeId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(s => s.Image)
+            .WithMany()
+            .HasForeignKey(s => s.ImageId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

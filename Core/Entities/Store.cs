@@ -9,7 +9,6 @@ public class Store
     public double? Latitude { get; set; }
     public double? Longitude { get; set; }
     public string? Phone { get; set; }
-    public string? ImageUrl { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
@@ -18,4 +17,7 @@ public class Store
 
     public Guid StoreTypeId { get; set; }
     public StoreType StoreType { get; set; } = null!;
+
+    public Guid? ImageId { get; set; }
+    public FileModel? Image { get; set; }
 }

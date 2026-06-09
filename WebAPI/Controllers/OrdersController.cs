@@ -1,8 +1,10 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Services.DTOs.Order;
 using Services.Interfaces;
+using WebAPI.Hubs;
 
 namespace WebAPI.Controllers;
 
@@ -11,10 +13,12 @@ namespace WebAPI.Controllers;
 public class OrdersController : ControllerBase
 {
     private readonly IOrderService _orderService;
+    private readonly IHubContext<OrderHub> _hub;
 
-    public OrdersController(IOrderService orderService)
+    public OrdersController(IOrderService orderService, IHubContext<OrderHub> hub)
     {
         _orderService = orderService;
+        _hub = hub;
     }
 
     [HttpPost]
@@ -25,6 +29,7 @@ public class OrdersController : ControllerBase
         {
             var clientId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var result = await _orderService.CreateAsync(request, clientId);
+            await _hub.Clients.Group("Couriers").SendAsync("NewOrder", result);
             return Ok(result);
         }
         catch (Exception ex)
@@ -66,6 +71,40 @@ public class OrdersController : ControllerBase
         }
     }
 
+    [HttpGet("courier/my")]
+    [Authorize(Roles = "Courier")]
+    public async Task<IActionResult> GetMyCourierOrders()
+    {
+        var courierId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var result = await _orderService.GetByCourierAsync(courierId);
+        return Ok(result);
+    }
+
+    [HttpGet("courier/available")]
+    [Authorize(Roles = "Courier")]
+    public async Task<IActionResult> GetAvailableOrders()
+    {
+        var result = await _orderService.GetAvailableForCourierAsync();
+        return Ok(result);
+    }
+
+    [HttpPatch("{id}/accept")]
+    [Authorize(Roles = "Courier")]
+    public async Task<IActionResult> AcceptOrder(Guid id)
+    {
+        try
+        {
+            var courierId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result = await _orderService.AcceptByCourierAsync(id, courierId);
+            await _hub.Clients.Group("Couriers").SendAsync("OrderAccepted", result);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
     [HttpPatch("{id}/deliver")]
     [Authorize(Roles = "Courier")]
     public async Task<IActionResult> MarkDelivered(Guid id)
@@ -79,6 +118,15 @@ public class OrdersController : ControllerBase
         {
             return BadRequest(new { error = ex.Message });
         }
+    }
+
+    [HttpGet("courier/history")]
+    [Authorize(Roles = "Courier")]
+    public async Task<IActionResult> GetCourierHistory()
+    {
+        var courierId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var result = await _orderService.GetCourierHistoryAsync(courierId);
+        return Ok(result);
     }
 }
 

@@ -1,0 +1,106 @@
+@page "/products/{StoreId}/{StoreName}"
+@inject ApiService Api
+@inject CartState Cart
+@inject NavigationManager Nav
+
+<PageTitle>@StoreName - Bekobod 24</PageTitle>
+
+<div class="page">
+    <a href="javascript:history.back()" class="back-link">&larr; Back</a>
+    <h1 class="page-title">@StoreName</h1>
+
+    @if (loading)
+    {
+        <div class="loading">Loading...</div>
+    }
+    else
+    {
+        <div class="category-chips">
+            <div class="chip @(selectedCategoryId == null ? "active" : "")" @onclick="() => Filter(null)">
+                All
+            </div>
+            @foreach (var cat in categories)
+            {
+                <div class="chip @(selectedCategoryId == cat.Id ? "active" : "")" @onclick="() => Filter(cat.Id)">
+                    @if (!string.IsNullOrEmpty(cat.ImageUrl))
+                    {
+                        <img src="@cat.ImageUrl" alt="" />
+                    }
+                    @cat.Name
+                </div>
+            }
+        </div>
+
+        @if (filteredProducts.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="icon">&#128230;</div>
+                <p>No products found</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var prod in filteredProducts)
+            {
+                <div class="product-card">
+                    <img src="@(prod.ImageUrl ?? $"https://picsum.photos/seed/{prod.Id}/400/400")" alt="@prod.Name" loading="lazy" />
+                    <div class="body">
+                        <div class="name">@prod.Name</div>
+                        @if (!string.IsNullOrEmpty(prod.Attributes))
+                        {
+                            <div class="meta">@prod.Attributes</div>
+                        }
+                        <div class="footer">
+                            <span class="price">@prod.Price.ToString("N0") so'm</span>
+                            <button class="btn btn-primary btn-sm" @onclick="() => AddToCart(prod)">
+                                &#43; Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public string StoreId { get; set; } = "";
+    [Parameter] public string StoreName { get; set; } = "";
+
+    private List<Category> categories = new();
+    private List<Product> allProducts = new();
+    private List<Product> filteredProducts = new();
+    private Guid? selectedCategoryId;
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            if (Guid.TryParse(StoreId, out var storeId))
+            {
+                Cart.SetStore(storeId, StoreName);
+                allProducts = await Api.GetProductsAsync(storeId);
+                filteredProducts = allProducts;
+                categories = await Api.GetCategoriesAsync(storeId);
+            }
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void Filter(Guid? categoryId)
+    {
+        selectedCategoryId = categoryId;
+        filteredProducts = categoryId.HasValue
+            ? allProducts.Where(p => p.CategoryId == categoryId.Value).ToList()
+            : allProducts;
+    }
+
+    private void AddToCart(Product prod)
+    {
+        Cart.Add(prod);
+    }
+}

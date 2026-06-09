@@ -8,10 +8,18 @@ namespace Services.Implementations;
 public class ProductService : IProductService
 {
     private readonly AppDbContext _db;
+    private const string BaseUrl = "http://localhost:5000";
 
     public ProductService(AppDbContext db)
     {
         _db = db;
+    }
+
+    private static string ImageUrlOrPlaceholder(Guid? imageId, Guid seed)
+    {
+        return imageId.HasValue
+            ? BaseUrl + "/api/files/download/" + imageId
+            : "https://picsum.photos/seed/" + seed + "/400/400";
     }
 
     public async Task<List<ProductResponse>> GetByStoreAsync(Guid storeId, Guid? categoryId)
@@ -29,7 +37,10 @@ public class ProductService : IProductService
                 Name = p.Name,
                 Description = p.Description,
                 Price = p.Price,
-                ImageUrl = p.ImageUrl,
+                ImageId = p.ImageId,
+                ImageUrl = p.Image != null
+                    ? BaseUrl + "/api/files/download/" + p.ImageId
+                    : "https://picsum.photos/seed/" + p.Id + "/400/400",
                 Unit = p.Unit,
                 Attributes = p.Attributes,
                 CategoryId = p.CategoryId,
@@ -48,7 +59,10 @@ public class ProductService : IProductService
                 Name = p.Name,
                 Description = p.Description,
                 Price = p.Price,
-                ImageUrl = p.ImageUrl,
+                ImageId = p.ImageId,
+                ImageUrl = p.Image != null
+                    ? BaseUrl + "/api/files/download/" + p.ImageId
+                    : "https://picsum.photos/seed/" + p.Id + "/400/400",
                 Unit = p.Unit,
                 Attributes = p.Attributes,
                 CategoryId = p.CategoryId,

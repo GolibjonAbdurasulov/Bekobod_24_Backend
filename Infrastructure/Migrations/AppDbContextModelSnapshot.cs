@@ -31,6 +31,9 @@ namespace Infrastructure.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("ImageId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -40,6 +43,8 @@ namespace Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ImageId");
 
                     b.HasIndex("StoreTypeId");
 
@@ -74,6 +79,32 @@ namespace Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Couriers");
+                });
+
+            modelBuilder.Entity("Core.Entities.FileModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Path")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Files");
                 });
 
             modelBuilder.Entity("Core.Entities.Order", b =>
@@ -191,8 +222,8 @@ namespace Infrastructure.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
-                    b.Property<string>("ImageUrl")
-                        .HasColumnType("text");
+                    b.Property<Guid?>("ImageId")
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("IsAvailable")
                         .HasColumnType("boolean");
@@ -214,6 +245,8 @@ namespace Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
+
+                    b.HasIndex("ImageId");
 
                     b.HasIndex("StoreId");
 
@@ -278,8 +311,8 @@ namespace Infrastructure.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
-                    b.Property<string>("ImageUrl")
-                        .HasColumnType("text");
+                    b.Property<Guid?>("ImageId")
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
@@ -306,6 +339,8 @@ namespace Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ImageId");
 
                     b.HasIndex("OwnerId");
 
@@ -381,10 +416,17 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Core.Entities.Category", b =>
                 {
+                    b.HasOne("Core.Entities.FileModel", "Image")
+                        .WithMany()
+                        .HasForeignKey("ImageId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Core.Entities.StoreType", "StoreType")
                         .WithMany()
                         .HasForeignKey("StoreTypeId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Image");
 
                     b.Navigation("StoreType");
                 });
@@ -429,7 +471,7 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Core.Entities.OrderItem", b =>
                 {
                     b.HasOne("Core.Entities.Order", "Order")
-                        .WithMany()
+                        .WithMany("Items")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -453,6 +495,11 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Core.Entities.FileModel", "Image")
+                        .WithMany()
+                        .HasForeignKey("ImageId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Core.Entities.Store", "Store")
                         .WithMany()
                         .HasForeignKey("StoreId")
@@ -460,6 +507,8 @@ namespace Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Category");
+
+                    b.Navigation("Image");
 
                     b.Navigation("Store");
                 });
@@ -498,6 +547,11 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Core.Entities.Store", b =>
                 {
+                    b.HasOne("Core.Entities.FileModel", "Image")
+                        .WithMany()
+                        .HasForeignKey("ImageId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Core.Entities.User", "Owner")
                         .WithMany()
                         .HasForeignKey("OwnerId")
@@ -510,9 +564,16 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Image");
+
                     b.Navigation("Owner");
 
                     b.Navigation("StoreType");
+                });
+
+            modelBuilder.Entity("Core.Entities.Order", b =>
+                {
+                    b.Navigation("Items");
                 });
 #pragma warning restore 612, 618
         }

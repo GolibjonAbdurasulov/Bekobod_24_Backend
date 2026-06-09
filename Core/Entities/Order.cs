@@ -23,4 +23,6 @@ public class Order
 
     public Guid StoreId { get; set; }
     public Store Store { get; set; } = null!;
+
+    public List<OrderItem> Items { get; set; } = new();
 }

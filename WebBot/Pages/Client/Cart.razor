@@ -1,0 +1,154 @@
+@page "/cart"
+@inject CartState CartState
+@inject ApiService Api
+@inject AuthState Auth
+@inject NavigationManager Nav
+
+<PageTitle>Cart - Bekobod 24</PageTitle>
+
+<div class="page">
+    <h1 class="page-title">Cart</h1>
+
+    @if (CartState.IsEmpty)
+    {
+        <div class="empty-state">
+            <div class="icon">&#128722;</div>
+            <p>Your cart is empty</p>
+            <a href="/" class="btn btn-primary" style="margin-top:12px;">Start Shopping</a>
+        </div>
+        return;
+    }
+
+    @if (!string.IsNullOrEmpty(CartState.StoreName))
+    {
+        <div class="card" style="margin-bottom:12px; padding:10px 14px;">
+            <strong>&#127970; @CartState.StoreName</strong>
+        </div>
+    }
+
+    <div class="card">
+        @foreach (var item in CartState.Items)
+        {
+            <div class="cart-item">
+                <div class="info">
+                    <div class="name">@item.ProductName</div>
+                    <div class="price">@item.UnitPrice.ToString("N0") so'm</div>
+                </div>
+                <div class="qty-controls">
+                    <button @onclick="() => CartState.UpdateQuantity(item.ProductId, item.Quantity - 1)">&#8722;</button>
+                    <span style="min-width:24px;text-align:center;font-weight:600;">@item.Quantity</span>
+                    <button @onclick="() => CartState.Add(new Product { Id = item.ProductId, Name = item.ProductName, Price = item.UnitPrice })">&#43;</button>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-weight:600;">Total:</span>
+        <span style="font-size:20px;font-weight:700;color:var(--primary);">
+            @CartState.TotalPrice.ToString("N0") so'm
+        </span>
+    </div>
+
+    @if (showCheckout)
+    {
+        <div class="card">
+            <h3 style="margin-bottom:12px;">Checkout</h3>
+
+            @if (!Auth.IsLoggedIn)
+            {
+                <div class="empty-state">
+                    <p>Please log in to place an order</p>
+                    <a href="/client-login" class="btn btn-primary" style="margin-top:8px;">Login</a>
+                </div>
+                return;
+            }
+
+            <div class="form-group">
+                <label>Delivery Address</label>
+                <input class="form-input" @bind="address" placeholder="Enter your address" />
+            </div>
+            <div class="form-group">
+                <label>Note (optional)</label>
+                <input class="form-input" @bind="note" placeholder="Any special instructions" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(error))
+            {
+                <div style="color:var(--error);margin-bottom:8px;">@error</div>
+            }
+
+            <button class="btn btn-primary btn-block" @onclick="PlaceOrder" disabled="@submitting">
+                @(submitting ? "Placing order..." : $"Place Order - {CartState.TotalPrice:N0} so'm")
+            </button>
+        </div>
+    }
+    else
+    {
+        <button class="btn btn-primary btn-block" @onclick="() => showCheckout = true">
+            Proceed to Checkout
+        </button>
+    }
+</div>
+
+@code {
+    private bool showCheckout;
+    private string address = "";
+    private string note = "";
+    private string error = "";
+    private bool submitting;
+
+    private async Task PlaceOrder()
+    {
+        if (string.IsNullOrWhiteSpace(address))
+        {
+            error = "Delivery address is required";
+            return;
+        }
+
+        if (!CartState.StoreId.HasValue)
+        {
+            error = "Store not selected";
+            return;
+        }
+
+        submitting = true;
+        error = "";
+
+        try
+        {
+            var request = new CreateOrderRequest
+            {
+                StoreId = CartState.StoreId.Value,
+                DeliveryAddress = address,
+                Note = string.IsNullOrWhiteSpace(note) ? null : note,
+                Items = CartState.Items.Select(i => new OrderItemRequest
+                {
+                    ProductId = i.ProductId,
+                    Quantity = i.Quantity
+                }).ToList()
+            };
+
+            var order = await Api.CreateOrderAsync(request);
+
+            if (order != null)
+            {
+                CartState.Clear();
+                showCheckout = false;
+                Nav.NavigateTo("/orders");
+            }
+            else
+            {
+                error = "Failed to place order. Please try again.";
+            }
+        }
+        catch
+        {
+            error = "An error occurred. Please try again.";
+        }
+        finally
+        {
+            submitting = false;
+        }
+    }
+}

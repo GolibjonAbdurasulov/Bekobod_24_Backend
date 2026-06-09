@@ -16,6 +16,7 @@ public class StoreService : IStoreService
 
     public async Task<List<StoreResponse>> GetByStoreTypeAsync(Guid storeTypeId)
     {
+        var baseUrl = "http://localhost:5000";
         return await _db.Stores
             .Where(s => s.StoreTypeId == storeTypeId && s.IsActive)
             .Select(s => new StoreResponse
@@ -25,7 +26,10 @@ public class StoreService : IStoreService
                 Description = s.Description,
                 Address = s.Address,
                 Phone = s.Phone,
-                ImageUrl = s.ImageUrl,
+                ImageId = s.ImageId,
+                ImageUrl = s.Image != null
+                    ? baseUrl + "/api/files/download/" + s.ImageId
+                    : null,
                 StoreTypeId = s.StoreTypeId,
                 StoreTypeName = s.StoreType.Name,
                 Rating = _db.Reviews.Where(r => r.StoreId == s.Id)
@@ -36,6 +40,7 @@ public class StoreService : IStoreService
 
     public async Task<StoreResponse?> GetByIdAsync(Guid id)
     {
+        var baseUrl = "http://localhost:5000";
         return await _db.Stores
             .Where(s => s.Id == id)
             .Select(s => new StoreResponse
@@ -45,7 +50,10 @@ public class StoreService : IStoreService
                 Description = s.Description,
                 Address = s.Address,
                 Phone = s.Phone,
-                ImageUrl = s.ImageUrl,
+                ImageId = s.ImageId,
+                ImageUrl = s.Image != null
+                    ? baseUrl + "/api/files/download/" + s.ImageId
+                    : null,
                 StoreTypeId = s.StoreTypeId,
                 StoreTypeName = s.StoreType.Name,
                 Rating = _db.Reviews.Where(r => r.StoreId == s.Id)

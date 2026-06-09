@@ -18,5 +18,10 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
             .WithMany()
             .HasForeignKey(c => c.StoreTypeId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(c => c.Image)
+            .WithMany()
+            .HasForeignKey(c => c.ImageId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
