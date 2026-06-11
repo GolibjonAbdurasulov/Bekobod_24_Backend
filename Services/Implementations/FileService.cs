@@ -78,7 +78,7 @@ public class FileService : IFileService
         return existing;
     }
 
-    public async Task DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(Guid id)
     {
         var file = await _db.Files.FindAsync(id)
             ?? throw new FileNotFoundException("Fayl topilmadi");
@@ -89,6 +89,7 @@ public class FileService : IFileService
 
         _db.Files.Remove(file);
         await _db.SaveChangesAsync();
+        return true;
     }
 
     public async Task<FileModel> GetByIdAsync(Guid id)

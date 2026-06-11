@@ -3,33 +3,29 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Configurations;
-
 public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
 {
     public void Configure(EntityTypeBuilder<OrderItem> builder)
     {
-        builder.HasKey(oi => oi.Id);
+        builder.ToTable("OrderItems");
 
-        builder.Property(oi => oi.ProductName)
-            .HasMaxLength(300)
-            .IsRequired();
+        builder.HasKey(x => x.Id);
 
-        builder.Property(oi => oi.UnitPrice)
-            .HasColumnType("decimal(18,2)")
-            .IsRequired();
+        builder.Property(x => x.Name)
+            .IsRequired()
+            .HasMaxLength(200);
 
-        builder.Property(oi => oi.TotalPrice)
-            .HasColumnType("decimal(18,2)")
-            .IsRequired();
+        builder.Property(x => x.Price)
+            .HasPrecision(18, 2);
 
-        builder.HasOne(oi => oi.Order)
-            .WithMany(o => o.Items)
-            .HasForeignKey(oi => oi.OrderId)
-            .OnDelete(DeleteBehavior.Cascade);
+        builder.Property(x => x.Quantity)
+            .HasDefaultValue(1);
 
-        builder.HasOne(oi => oi.Product)
-            .WithMany()
-            .HasForeignKey(oi => oi.ProductId)
-            .OnDelete(DeleteBehavior.Restrict);
+        builder.Property(x => x.BookingTime)
+            .IsRequired(false);
+
+        builder.HasOne<Order>()
+            .WithMany(x => x.Items)
+            .HasForeignKey(x => x.OrderId);
     }
 }

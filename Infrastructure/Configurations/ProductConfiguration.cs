@@ -3,37 +3,32 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Configurations;
-
 public class ProductConfiguration : IEntityTypeConfiguration<Product>
 {
     public void Configure(EntityTypeBuilder<Product> builder)
     {
-        builder.HasKey(p => p.Id);
+        builder.ToTable("Products");
 
-        builder.Property(p => p.Name)
-            .HasMaxLength(300)
-            .IsRequired();
+        builder.HasKey(x => x.Id);
 
-        builder.Property(p => p.Price)
-            .HasColumnType("decimal(18,2)")
-            .IsRequired();
+        builder.Property(x => x.Name)
+            .IsRequired()
+            .HasMaxLength(200);
 
-        builder.Property(p => p.Attributes)
-            .HasColumnType("jsonb");
+        builder.Property(x => x.Description)
+            .HasMaxLength(1000);
 
-        builder.HasOne(p => p.Store)
-            .WithMany()
-            .HasForeignKey(p => p.StoreId)
-            .OnDelete(DeleteBehavior.Restrict);
+        builder.Property(x => x.Price)
+            .HasPrecision(18, 2);
 
-        builder.HasOne(p => p.Category)
-            .WithMany()
-            .HasForeignKey(p => p.CategoryId)
-            .OnDelete(DeleteBehavior.Restrict);
+        builder.Property(x => x.ImageUrl)
+            .HasMaxLength(500);
 
-        builder.HasOne(p => p.Image)
-            .WithMany()
-            .HasForeignKey(p => p.ImageId)
-            .OnDelete(DeleteBehavior.SetNull);
+        builder.Property(x => x.IsAvailable)
+            .HasDefaultValue(true);
+
+        builder.HasOne(x => x.Store)
+            .WithMany(x => x.Products)
+            .HasForeignKey(x => x.StoreId);
     }
 }

@@ -34,6 +34,9 @@ Create a web bot (Blazor WebAssembly) for client and courier UI with Flutter-lik
 - **Backend CORS**: Already configured with `SetIsOriginAllowed(_ => true)`, no changes needed
 - **WebBot – Telegram WebApp integration**: Added `Services/TelegramService.cs` (JS interop for `window.Telegram.WebApp` — ready, expand, back button, sendData, getUser), `MainLayout` hides bottom nav in Telegram context, `wwwroot/index.html` has Telegram WebApp init script
 - **`flutter analyze`**: 0 errors, 0 warnings (15 info)
+- **Single-origin architecture**: WebAPI now serves both API controllers AND Blazor WASM static files from `WebBot/publish/wwwroot` via `PhysicalFileProvider`. One tunnel to port 5000 handles everything.
+- **ApiService uses relative URLs**: `HttpClient.BaseAddress` = `{page_origin}/api/` — no absolute/hardcoded URLs.
+- **Fixed missing usings**: `Program.cs` now has `Services.Interfaces`, `Services.Implementations`, `Services.Settings`, `Telegram.Bot`.
 
 ### In Progress
 - (none)
@@ -49,14 +52,17 @@ Create a web bot (Blazor WebAssembly) for client and courier UI with Flutter-lik
 - Image upload flow unchanged: pick → upload to `/api/files/upload` → attach `imageId` to entity
 
 ## Next Steps
-1. Start backend + bot: `dotnet run --project WebAPI` (bot starts automatically)
-2. Start webapp: `dotnet run --project WebBot`
-3. Expose WebBot via ngrok (`ngrok http 5188`), copy HTTPS URL to `WebAPI/appsettings.json` → `Bot:WebAppUrl`
-4. Test in Telegram: `/start` → tap "Open Catalog" → browse → order
-5. Test courier: `/courier` → login → accept → deliver
+1. Publish WebBot: `dotnet publish WebBot/WebBot.csproj -o WebBot/publish -p:PublishTrimmed=false`
+2. Start backend + bot: `dotnet run --project WebAPI` (bot starts automatically, also serves Blazor WASM)
+3. Expose via one tunnel: `cloudflared tunnel --url http://localhost:5000`
+4. Copy tunnel HTTPS URL to `WebAPI/appsettings.json` → `Bot:WebAppUrl`
+5. Restart WebAPI so bot uses the new URL
+6. Test in Telegram: `/start` → tap "Open Catalog" → browse → order
+7. Test courier: `/courier` → login → accept → deliver
 
 ## Critical Context
 - Backend URL: `http://localhost:5000/api`
+- WebBot served from: `WebAPI` (static files from `WebBot/publish/wwwroot`)
 - File upload: `POST /api/files/upload` (multipart) → returns `{id, url}`
 - Image download: `GET /api/files/download/{id}`
 - Placeholder: `https://picsum.photos/seed/{entityId}/400/400`

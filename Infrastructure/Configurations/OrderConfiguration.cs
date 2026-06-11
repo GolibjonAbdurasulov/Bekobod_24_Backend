@@ -1,8 +1,6 @@
 using Core.Entities;
-using Core.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Infrastructure.Configurations;
 
@@ -10,41 +8,27 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
 {
     public void Configure(EntityTypeBuilder<Order> builder)
     {
-        builder.HasKey(o => o.Id);
+        builder.ToTable("Orders");
 
-        builder.Property(o => o.OrderNumber)
-            .HasMaxLength(50)
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.TotalPrice)
+            .HasPrecision(18, 2);
+
+        builder.Property(x => x.Status)
             .IsRequired();
 
-        builder.HasIndex(o => o.OrderNumber)
-            .IsUnique();
+        builder.Property(x => x.CreatedAt)
+            .HasDefaultValueSql("NOW()");
 
-        builder.Property(o => o.Status)
-            .HasConversion(new EnumToStringConverter<OrderStatus>())
-            .HasMaxLength(30)
-            .IsRequired();
-
-        builder.Property(o => o.TotalAmount)
-            .HasColumnType("decimal(18,2)")
-            .IsRequired();
-
-        builder.Property(o => o.DeliveryAddress)
-            .HasMaxLength(500)
-            .IsRequired();
-
-        builder.HasOne(o => o.Client)
+        builder.HasOne<User>()
             .WithMany()
-            .HasForeignKey(o => o.ClientId)
+            .HasForeignKey(x => x.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(o => o.Courier)
-            .WithMany()
-            .HasForeignKey(o => o.CourierId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        builder.HasOne(o => o.Store)
-            .WithMany()
-            .HasForeignKey(o => o.StoreId)
-            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasMany(x => x.Items)
+            .WithOne(x => x.Order)
+            .HasForeignKey(x => x.OrderId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

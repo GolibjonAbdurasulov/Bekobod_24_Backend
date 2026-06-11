@@ -3,37 +3,30 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Infrastructure.Configurations;
-
 public class StoreConfiguration : IEntityTypeConfiguration<Store>
 {
     public void Configure(EntityTypeBuilder<Store> builder)
     {
-        builder.HasKey(s => s.Id);
+        builder.ToTable("Stores");
 
-        builder.Property(s => s.Name)
-            .HasMaxLength(300)
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.Name)
+            .IsRequired()
+            .HasMaxLength(200);
+
+        builder.Property(x => x.Type)
             .IsRequired();
 
-        builder.Property(s => s.Address)
-            .HasMaxLength(500)
-            .IsRequired();
+        builder.Property(x => x.ImageUrl)
+            .HasMaxLength(500);
 
-        builder.Property(s => s.Phone)
-            .HasMaxLength(20);
+        builder.Property(x => x.IsActive)
+            .HasDefaultValue(true);
 
-        builder.HasOne(s => s.Owner)
-            .WithMany()
-            .HasForeignKey(s => s.OwnerId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(s => s.StoreType)
-            .WithMany()
-            .HasForeignKey(s => s.StoreTypeId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(s => s.Image)
-            .WithMany()
-            .HasForeignKey(s => s.ImageId)
-            .OnDelete(DeleteBehavior.SetNull);
+        builder.HasMany(x => x.Products)
+            .WithOne(x => x.Store)
+            .HasForeignKey(x => x.StoreId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

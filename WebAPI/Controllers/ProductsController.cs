@@ -1,32 +1,24 @@
 using Microsoft.AspNetCore.Mvc;
-using Services.Interfaces;
+using Services.Implementations;
+using WebAPI.DTOs;
+using WebAPI.Mapping;
 
 namespace WebAPI.Controllers;
-
 [ApiController]
 [Route("api/products")]
-public class ProductsController : ControllerBase
+public class ProductController : ControllerBase
 {
-    private readonly IProductService _productService;
+    private readonly ProductService _service;
 
-    public ProductsController(IProductService productService)
+    public ProductController(ProductService service)
     {
-        _productService = productService;
+        _service = service;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetByStore([FromQuery] Guid storeId, [FromQuery] Guid? categoryId)
+    [HttpGet("store/{storeId}")]
+    public async Task<List<ProductDto>> GetByStore(long storeId)
     {
-        var result = await _productService.GetByStoreAsync(storeId, categoryId);
-        return Ok(result);
-    }
-
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
-    {
-        var result = await _productService.GetByIdAsync(id);
-        if (result == null)
-            return NotFound();
-        return Ok(result);
+        var products = await _service.GetByStore(storeId);
+        return products.Select(ProductMapper.ToDto).ToList();
     }
 }

@@ -5,9 +5,13 @@ namespace Services.Interfaces;
 
 public interface IFileService
 {
-    Task<FileModel> UploadAsync(IFormFile file);
-    Task<FileModel> UpdateAsync(Guid id, IFormFile file);
-    Task DeleteAsync(Guid id);
-    Task<FileModel> GetByIdAsync(Guid id);
-    Task<Stream> GetStreamAsync(Guid id);
+    public Task<FileModel> UploadAsync(IFormFile file);
+
+    public Task<FileModel> UpdateAsync(Guid id, IFormFile file);
+
+    public Task<bool> DeleteAsync(Guid id);
+
+    public Task<FileModel> GetByIdAsync(Guid id);
+
+    public Task<Stream> GetStreamAsync(Guid id);
 }

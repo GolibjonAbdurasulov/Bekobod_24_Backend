@@ -1,36 +1,35 @@
 using Core.Entities;
-using Core.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Infrastructure.Configurations;
-
 public class UserConfiguration : IEntityTypeConfiguration<User>
 {
     public void Configure(EntityTypeBuilder<User> builder)
     {
-        builder.HasKey(u => u.Id);
+        builder.ToTable("Users");
 
-        builder.Property(u => u.FullName)
-            .HasMaxLength(200)
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.TelegramId)
             .IsRequired();
 
-        builder.Property(u => u.Phone)
-            .HasMaxLength(20)
-            .IsRequired();
-
-        builder.HasIndex(u => u.Phone)
+        builder.HasIndex(x => x.TelegramId)
             .IsUnique();
 
-        builder.Property(u => u.Email)
-            .HasMaxLength(200);
+        builder.Property(x => x.Username)
+            .HasMaxLength(100);
 
-        builder.Property(u => u.PasswordHash)
+        builder.Property(x => x.FirstName)
+            .HasMaxLength(100);
+
+        builder.Property(x => x.PhoneNumber)
+            .HasMaxLength(30);
+
+        builder.Property(x => x.Role)
             .IsRequired();
 
-        builder.Property(u => u.Role)
-            .HasConversion(new EnumToStringConverter<UserRole>())
-            .HasMaxLength(20);
+        builder.Property(x => x.CreatedAt)
+            .HasDefaultValueSql("NOW()");
     }
 }

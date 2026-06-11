@@ -2,8 +2,7 @@ namespace Core.Enums;
 
 public enum UserRole
 {
-    Admin,
-    Partner,
-    Courier,
-    Client
+    Client = 1,
+    Admin = 2,
+    Courier = 3
 }

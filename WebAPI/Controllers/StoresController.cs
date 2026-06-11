@@ -1,32 +1,38 @@
+using Core.Enums;
 using Microsoft.AspNetCore.Mvc;
-using Services.Interfaces;
+using Services.Implementations;
+using WebAPI.DTOs;
+using WebAPI.Mapping;
 
 namespace WebAPI.Controllers;
-
 [ApiController]
 [Route("api/stores")]
-public class StoresController : ControllerBase
+public class StoreController : ControllerBase
 {
-    private readonly IStoreService _storeService;
+    private readonly StoreService _service;
 
-    public StoresController(IStoreService storeService)
+    public StoreController(StoreService service)
     {
-        _storeService = storeService;
+        _service = service;
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetByStoreType([FromQuery] Guid storeTypeId)
+    public async Task<List<StoreDto>> GetAll([FromQuery] StoreType? type)
     {
-        var result = await _storeService.GetByStoreTypeAsync(storeTypeId);
-        return Ok(result);
+        var stores = await _service.GetAllAsync();
+
+        if (type != null)
+        {
+            stores = await _service.GetByType(type.Value);
+        }
+
+        return stores.Select(StoreMapper.ToDto).ToList();
     }
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    [HttpGet("type/{type}")]
+    public async Task<List<StoreDto>> GetByType(StoreType type)
     {
-        var result = await _storeService.GetByIdAsync(id);
-        if (result == null)
-            return NotFound();
-        return Ok(result);
+        var stores = await _service.GetByType(type);
+        return stores.Select(StoreMapper.ToDto).ToList();
     }
 }
