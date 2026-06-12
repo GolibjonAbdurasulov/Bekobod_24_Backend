@@ -1,19 +1,31 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace Core.Entities;
 
-public class Product
+[Table("products")]
+public class Product : ModelBase<long>
 {
-    public long Id { get; set; }
-
+    [Column("store_id")]
     public long StoreId { get; set; }
-    public Store Store { get; set; }
 
-    public string Name { get; set; }
+    [ForeignKey(nameof(StoreId))]
+    public Store Store { get; set; } = null!;
 
+    [Column("name")]
+    public string Name { get; set; } = string.Empty;
+
+    [Column("description")]
     public string? Description { get; set; }
 
+    [Column("price")]
     public decimal Price { get; set; }
 
-    public string? ImageUrl { get; set; }
+    [Column("image_id")]
+    public Guid? ImageId { get; set; }
 
+    [ForeignKey(nameof(ImageId))]
+    public FileModel? Image { get; set; }
+
+    [Column("is_available")]
     public bool IsAvailable { get; set; } = true;
 }

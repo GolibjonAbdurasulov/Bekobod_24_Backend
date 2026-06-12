@@ -1,17 +1,13 @@
-using Core.Entities;
+﻿using Core.Entities;
 using Microsoft.AspNetCore.Http;
 
 namespace Services.Interfaces;
 
 public interface IFileService
 {
-    public Task<FileModel> UploadAsync(IFormFile file);
-
-    public Task<FileModel> UpdateAsync(Guid id, IFormFile file);
-
-    public Task<bool> DeleteAsync(Guid id);
-
-    public Task<FileModel> GetByIdAsync(Guid id);
-
-    public Task<Stream> GetStreamAsync(Guid id);
+    Task<FileModel> UploadFileAsync(IFormFile file);
+    Task<FileModel> UpdateFileAsync(Guid id, IFormFile file);
+    Task<FileModel> DeleteAsync(Guid id);
+    Task<FileModel> GetByIdAsync(Guid id);
+    Task<Stream> SendFileAsync(Guid id);
 }

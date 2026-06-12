@@ -1,27 +1,34 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace Core.Entities;
 
-public class FileModel
+[Table("files")]
+public class FileModel : ModelBase<Guid>
 {
-    public Guid Id { get; set; }
-
+    [Column("file_name")]
     public string FileName { get; set; } = string.Empty;
 
+    [Column("content_type")]
     public string ContentType { get; set; } = string.Empty;
 
+    [Column("path")]
     public string Path { get; set; } = string.Empty;
 
-    public long Size { get; set; } // bytes
+    [Column("size")]
+    public long Size { get; set; }
 
+    [Column("created_at")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    [Column("is_public")]
     public bool IsPublic { get; set; } = true;
 
-    // optional ownership (MUHIM)
+    [Column("user_id")]
     public long? UserId { get; set; }
 
-    // optional relation (marketplace uchun kuchli)
-    public string? EntityType { get; set; } 
-    // Product, Store, Service, etc
+    [Column("entity_type")]
+    public string? EntityType { get; set; }
 
+    [Column("entity_id")]
     public long? EntityId { get; set; }
 }

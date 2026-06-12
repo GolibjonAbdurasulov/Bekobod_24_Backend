@@ -1,9 +1,11 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace Core.Entities;
 
-public class Cart
+[Table("carts")]
+public class Cart : ModelBase<long>
 {
-    public long Id { get; set; }
-
+    [Column("user_id")]
     public long UserId { get; set; }
 
     public List<CartItem> Items { get; set; } = new();

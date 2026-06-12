@@ -1,5 +1,14 @@
 using System.Text;
 using Infrastructure;
+using Infrastructure.Repositories.CartItemRepositories;
+using Infrastructure.Repositories.CartRepositories;
+using Infrastructure.Repositories.FileRepositories;
+using Infrastructure.Repositories.OrderItemRepositories;
+using Infrastructure.Repositories.OrderRepositories;
+using Infrastructure.Repositories.ProductRepositories;
+using Infrastructure.Repositories.ServiceRepositories;
+using Infrastructure.Repositories.StoreRepositories;
+using Infrastructure.Repositories.UserRepositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
@@ -15,7 +24,8 @@ using WebAPI.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.UseUrls("http://localhost:5000");
+var apiSettings = builder.Configuration.GetSection("Api").Get<ApiSettings>() ?? new ApiSettings();
+ApiSettings.BaseUrl = apiSettings.InstanceBaseUrl ?? "http://localhost:5000";
 
 #region CONFIGS
 
@@ -36,6 +46,18 @@ if (!string.IsNullOrWhiteSpace(botToken))
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+#endregion
+
+#region REPOSITORIES
+builder.Services.AddScoped<IStoreRepository, StoreRepository>();
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
+builder.Services.AddScoped<ICartRepository, CartRepository>();
+builder.Services.AddScoped<ICartItemRepository, CartItemRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<IOrderItemRepository, OrderItemRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IFileRepository, FileRepository>();
 #endregion
 
 #region SERVICES
@@ -149,7 +171,6 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
-    
 }
 
 #endregion
@@ -162,7 +183,8 @@ app.UseMiddleware<ExceptionHandlerMiddleware>();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsProduction())
+    app.UseHttpsRedirection();
 
 app.UseCors("AllowAll");
 
@@ -172,9 +194,15 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHub<OrderHub>("/hubs/orders");
 
-var bot = app.Services.GetRequiredService<ITelegramBotClient>();
-var botService = new TelegramBotService(bot);
-botService.Start();
+var botTokenCfg = app.Configuration["Bot:BotToken"];
+if (!string.IsNullOrWhiteSpace(botTokenCfg))
+{
+    var bot = app.Services.GetRequiredService<ITelegramBotClient>();
+    var webAppUrlCfg = app.Configuration["Bot:WebAppUrl"] ?? "";
+    var botService = new TelegramBotService(bot, webAppUrlCfg);
+    botService.Start();
+    Console.WriteLine("[BOT] Telegram bot started successfully");
+}
 #endregion
 
 #region WEBBOT STATIC FILES

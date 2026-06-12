@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Services.DTOs;
 using Services.Implementations;
-using Core.Entities;
 
 namespace WebAPI.Controllers;
 
@@ -8,36 +8,35 @@ namespace WebAPI.Controllers;
 [Route("api/cart")]
 public class CartController : ControllerBase
 {
-    private readonly CartService _cartService;
+    private readonly CartService _service;
 
-    public CartController(CartService cartService)
+    public CartController(CartService service) => _service = service;
+
+    [HttpGet("{userId}")]
+    public async Task<CartDto> GetCart(long userId)
     {
-        _cartService = cartService;
+        return await _service.GetOrCreateCart(userId);
     }
 
-    // GET CART
-    [HttpGet]
-    public async Task<IActionResult> GetCart([FromHeader(Name = "x-telegram-id")] long userId)
+    [HttpPost("{userId}/items")]
+    public async Task<ActionResult<CartDto>> AddItem(long userId, [FromBody] AddToCartDto dto)
     {
-        var cart = await _cartService.GetOrCreateCart(userId);
-        return Ok(cart);
+        await _service.AddItem(userId, dto);
+        var cart = await _service.GetOrCreateCart(userId);
+        return cart;
     }
 
-    // ADD ITEM
-    [HttpPost("add")]
-    public async Task<IActionResult> AddItem(
-        [FromHeader(Name = "x-telegram-id")] long userId,
-        [FromBody] CartItem item)
-    {
-        await _cartService.AddItem(userId, item);
-        return Ok(new { message = "Added to cart" });
-    }
-
-    // REMOVE ITEM
-    [HttpDelete("item/{itemId}")]
+    [HttpDelete("items/{itemId}")]
     public async Task<IActionResult> RemoveItem(long itemId)
     {
-        await _cartService.RemoveItem(itemId);
-        return Ok(new { message = "Removed from cart" });
+        await _service.RemoveItem(itemId);
+        return NoContent();
+    }
+
+    [HttpDelete("{userId}")]
+    public async Task<IActionResult> ClearCart(long userId)
+    {
+        await _service.ClearCart(userId);
+        return NoContent();
     }
 }

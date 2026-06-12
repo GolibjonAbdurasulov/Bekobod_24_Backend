@@ -21,4 +21,27 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="DTOs\StoreDto.cs" />
+    <Compile Remove="DTOs\OrderItemDto.cs" />
+    <Compile Remove="Mapping\OrderMapper.cs" />
+    <Compile Remove="DTOs\ServiceDto.cs" />
+    <Compile Remove="DTOs\FileDto.cs" />
+    <Compile Remove="Mapping\OrderItemMapper.cs" />
+    <Compile Remove="DTOs\UserDto.cs" />
+    <Compile Remove="Mapping\FileMapper.cs" />
+    <Compile Remove="Mapping\UserMapper.cs" />
+    <Compile Remove="DTOs\ProductDto.cs" />
+    <Compile Remove="Mapping\CartItemMapper.cs" />
+    <Compile Remove="DTOs\CartDto.cs" />
+    <Compile Remove="Mapping\ProductMapper.cs" />
+    <Compile Remove="Mapping\StoreMapper.cs" />
+    <Compile Remove="Mapping\CartMapper.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="DTOs\" />
+    <Folder Include="Mapping\" />
+  </ItemGroup>
+
 </Project>

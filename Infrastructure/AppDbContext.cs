@@ -1,6 +1,5 @@
 using Core.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Design;
 
 namespace Infrastructure;
 public class AppDbContext : DbContext
@@ -20,6 +19,13 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+        modelBuilder.Entity<Cart>()
+            .HasOne<User>()
+            .WithMany()
+            .HasForeignKey(c => c.UserId);
+
+        modelBuilder.Entity<User>()
+            .HasIndex(u => u.TelegramId)
+            .IsUnique();
     }
 }

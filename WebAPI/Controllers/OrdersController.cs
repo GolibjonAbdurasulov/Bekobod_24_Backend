@@ -1,33 +1,61 @@
-
+using Core.Enums;
 using Microsoft.AspNetCore.Mvc;
+using Services.DTOs;
 using Services.Implementations;
-using WebAPI.DTOs;
-using WebAPI.Mapping;
 
 namespace WebAPI.Controllers;
 
 [ApiController]
 [Route("api/orders")]
-public class OrderController : ControllerBase
+public class OrdersController : ControllerBase
 {
     private readonly OrderService _service;
 
-    public OrderController(OrderService service)
+    public OrdersController(OrderService service) => _service = service;
+
+    [HttpGet]
+    public async Task<List<OrderDto>> GetAll()
     {
-        _service = service;
+        return await _service.GetAllOrders();
     }
 
-    [HttpPost("checkout/{userId}")]
-    public async Task<OrderDto> Checkout(long userId)
+    [HttpGet("{id}")]
+    public async Task<ActionResult<OrderDto>> GetById(long id)
     {
-        var order = await _service.CreateOrderFromCart(userId);
-        return OrderMapper.ToDto(order);
+        var order = await _service.GetOrderById(id);
+        if (order == null) return NotFound();
+        return order;
     }
 
     [HttpGet("user/{userId}")]
     public async Task<List<OrderDto>> GetUserOrders(long userId)
     {
-        var orders = await _service.GetUserOrders(userId);
-        return orders.Select(OrderMapper.ToDto).ToList();
+        return await _service.GetUserOrders(userId);
+    }
+
+    [HttpPost("checkout/{userId}")]
+    public async Task<ActionResult<OrderDto>> Checkout(long userId)
+    {
+        var order = await _service.CreateOrderFromCart(userId);
+        return CreatedAtAction(nameof(GetById), new { id = order.Id }, order);
+    }
+
+    [HttpPatch("{id}/status")]
+    public async Task<ActionResult<OrderDto>> UpdateStatus(long id, [FromBody] UpdateOrderStatusDto dto)
+    {
+        if (!Enum.TryParse<OrderStatus>(dto.Status, true, out var status))
+            return BadRequest("Noto'g'ri status");
+
+        var order = await _service.UpdateStatus(id, status);
+        if (order == null) return NotFound();
+        return order;
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(long id)
+    {
+        var result = await _service.DeleteOrder(id);
+        if (!result) return NotFound();
+        return NoContent();
     }
 }

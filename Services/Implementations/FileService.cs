@@ -1,22 +1,20 @@
 using Core.Entities;
-using Infrastructure;
+using Infrastructure.Repositories.FileRepositories;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 using Services.Interfaces;
 
 namespace Services.Implementations;
 
 public class FileService : IFileService
 {
-    private readonly AppDbContext _db;
-    private const string UploadsFolder = "wwwroot/uploads";
+    private readonly IFileRepository _repo;
 
-    public FileService(AppDbContext db)
+    public FileService(IFileRepository repo)
     {
-        _db = db;
+        _repo = repo;
     }
 
-    public async Task<FileModel> UploadAsync(IFormFile file)
+    public async Task<FileModel> UploadFileAsync(IFormFile file)
     {
         var ext = Path.GetExtension(file.FileName);
         var id = Guid.NewGuid();
@@ -33,80 +31,71 @@ public class FileService : IFileService
             await file.CopyToAsync(stream);
         }
 
-        var fileModel = new FileModel
+        var entity = new FileModel
         {
             Id = id,
             FileName = file.FileName,
             ContentType = file.ContentType ?? "application/octet-stream",
-            Path = relativePath
+            Path = fullPath,
+            Size = file.Length
         };
 
-        _db.Add(fileModel);
-        await _db.SaveChangesAsync();
-
-        return fileModel;
+        return await _repo.AddAsync(entity);
     }
 
-    public async Task<FileModel> UpdateAsync(Guid id, IFormFile file)
+    public async Task<FileModel> UpdateFileAsync(Guid id, IFormFile file)
     {
-        var existing = await _db.Files.FindAsync(id)
-            ?? throw new FileNotFoundException("Fayl topilmadi");
+        var entity = await _repo.GetByIdAsync(id);
+        if (entity is null)
+            throw new FileNotFoundException("Fayl topilmadi");
 
-        var oldFullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", existing.Path);
-        if (File.Exists(oldFullPath))
-            File.Delete(oldFullPath);
+        if (System.IO.File.Exists(entity.Path))
+            System.IO.File.Delete(entity.Path);
 
         var ext = Path.GetExtension(file.FileName);
         var fileName = id + ext;
-        var relativePath = Path.Combine("uploads", fileName);
-        var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", relativePath);
-
-        var dir = Path.GetDirectoryName(fullPath);
-        if (!Directory.Exists(dir))
-            Directory.CreateDirectory(dir!);
+        var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", fileName);
 
         using (var stream = new FileStream(fullPath, FileMode.Create))
         {
             await file.CopyToAsync(stream);
         }
 
-        existing.FileName = file.FileName;
-        existing.ContentType = file.ContentType ?? "application/octet-stream";
-        existing.Path = relativePath;
+        entity.FileName = file.FileName;
+        entity.ContentType = file.ContentType ?? "application/octet-stream";
+        entity.Path = fullPath;
+        entity.Size = file.Length;
 
-        await _db.SaveChangesAsync();
-        return existing;
+        return await _repo.UpdateAsync(entity);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<FileModel> DeleteAsync(Guid id)
     {
-        var file = await _db.Files.FindAsync(id)
-            ?? throw new FileNotFoundException("Fayl topilmadi");
+        var entity = await _repo.GetByIdAsync(id);
+        if (entity is null)
+            throw new FileNotFoundException("Fayl topilmadi");
 
-        var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", file.Path);
-        if (File.Exists(fullPath))
-            File.Delete(fullPath);
+        if (System.IO.File.Exists(entity.Path))
+            System.IO.File.Delete(entity.Path);
 
-        _db.Files.Remove(file);
-        await _db.SaveChangesAsync();
-        return true;
+        await _repo.RemoveAsync(entity);
+        return entity;
     }
 
     public async Task<FileModel> GetByIdAsync(Guid id)
     {
-        return await _db.Files.FindAsync(id)
-            ?? throw new FileNotFoundException("Fayl topilmadi");
+        var entity = await _repo.GetByIdAsync(id);
+        if (entity is null)
+            throw new FileNotFoundException("Fayl topilmadi");
+        return entity;
     }
 
-    public async Task<Stream> GetStreamAsync(Guid id)
+    public async Task<Stream> SendFileAsync(Guid id)
     {
-        var file = await _db.Files.FindAsync(id)
-            ?? throw new FileNotFoundException("Fayl topilmadi");
+        var file = await _repo.GetByIdAsync(id);
+        if (file is null || !System.IO.File.Exists(file.Path))
+            throw new FileNotFoundException("Fayl topilmadi");
 
-        var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", file.Path);
-        if (!File.Exists(fullPath))
-            throw new FileNotFoundException("Fayl diskda topilmadi");
-
-        return new FileStream(fullPath, FileMode.Open, FileAccess.Read);
+        return new FileStream(file.Path, FileMode.Open, FileAccess.Read);
     }
 }

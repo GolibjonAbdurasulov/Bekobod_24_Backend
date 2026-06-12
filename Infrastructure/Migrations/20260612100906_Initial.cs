@@ -17,9 +17,15 @@ namespace Infrastructure.Migrations
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
-                    file_name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    content_type = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    path = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false)
+                    file_name = table.Column<string>(type: "text", nullable: false),
+                    content_type = table.Column<string>(type: "text", nullable: false),
+                    path = table.Column<string>(type: "text", nullable: false),
+                    size = table.Column<long>(type: "bigint", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    is_public = table.Column<bool>(type: "boolean", nullable: false),
+                    user_id = table.Column<long>(type: "bigint", nullable: true),
+                    entity_type = table.Column<string>(type: "text", nullable: true),
+                    entity_id = table.Column<long>(type: "bigint", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -33,9 +39,9 @@ namespace Infrastructure.Migrations
                     id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     telegram_id = table.Column<long>(type: "bigint", nullable: false),
-                    username = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    first_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    phone_number = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
+                    username = table.Column<string>(type: "text", nullable: true),
+                    first_name = table.Column<string>(type: "text", nullable: true),
+                    phone_number = table.Column<string>(type: "text", nullable: true),
                     role = table.Column<int>(type: "integer", nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
@@ -50,7 +56,7 @@ namespace Infrastructure.Migrations
                 {
                     id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    name = table.Column<string>(type: "text", nullable: false),
                     type = table.Column<int>(type: "integer", nullable: false),
                     image_id = table.Column<Guid>(type: "uuid", nullable: true),
                     is_active = table.Column<bool>(type: "boolean", nullable: false)
@@ -113,8 +119,8 @@ namespace Infrastructure.Migrations
                     id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     store_id = table.Column<long>(type: "bigint", nullable: false),
-                    name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    name = table.Column<string>(type: "text", nullable: false),
+                    description = table.Column<string>(type: "text", nullable: true),
                     price = table.Column<decimal>(type: "numeric", nullable: false),
                     image_id = table.Column<Guid>(type: "uuid", nullable: true),
                     is_available = table.Column<bool>(type: "boolean", nullable: false)
@@ -142,9 +148,9 @@ namespace Infrastructure.Migrations
                     id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     store_id = table.Column<long>(type: "bigint", nullable: false),
-                    name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    name = table.Column<string>(type: "text", nullable: false),
                     price = table.Column<decimal>(type: "numeric", nullable: false),
-                    description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    description = table.Column<string>(type: "text", nullable: true),
                     requires_booking = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
@@ -168,7 +174,7 @@ namespace Infrastructure.Migrations
                     store_id = table.Column<long>(type: "bigint", nullable: false),
                     product_id = table.Column<long>(type: "bigint", nullable: true),
                     service_id = table.Column<long>(type: "bigint", nullable: true),
-                    name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    name = table.Column<string>(type: "text", nullable: false),
                     price = table.Column<decimal>(type: "numeric", nullable: false),
                     quantity = table.Column<int>(type: "integer", nullable: false),
                     booking_time = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
@@ -194,7 +200,7 @@ namespace Infrastructure.Migrations
                     store_id = table.Column<long>(type: "bigint", nullable: false),
                     product_id = table.Column<long>(type: "bigint", nullable: true),
                     service_id = table.Column<long>(type: "bigint", nullable: true),
-                    name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    name = table.Column<string>(type: "text", nullable: false),
                     price = table.Column<decimal>(type: "numeric", nullable: false),
                     quantity = table.Column<int>(type: "integer", nullable: false),
                     booking_time = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
@@ -218,12 +224,6 @@ namespace Infrastructure.Migrations
                         column: x => x.service_id,
                         principalTable: "services",
                         principalColumn: "id");
-                    table.ForeignKey(
-                        name: "FK_cart_items_stores_store_id",
-                        column: x => x.store_id,
-                        principalTable: "stores",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -240,11 +240,6 @@ namespace Infrastructure.Migrations
                 name: "IX_cart_items_service_id",
                 table: "cart_items",
                 column: "service_id");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_cart_items_store_id",
-                table: "cart_items",
-                column: "store_id");
 
             migrationBuilder.CreateIndex(
                 name: "IX_carts_user_id",

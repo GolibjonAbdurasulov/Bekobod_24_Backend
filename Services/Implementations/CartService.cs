@@ -1,50 +1,70 @@
 using Core.Entities;
-using Infrastructure;
-using Microsoft.EntityFrameworkCore;
+using Infrastructure.Repositories.CartItemRepositories;
+using Infrastructure.Repositories.CartRepositories;
+using Services.DTOs;
+using Services.Mapping;
 
 namespace Services.Implementations;
 
 public class CartService
 {
-    private readonly AppDbContext _db;
+    private readonly ICartRepository _cartRepo;
+    private readonly ICartItemRepository _itemRepo;
 
-    public CartService(AppDbContext db)
+    public CartService(ICartRepository cartRepo, ICartItemRepository itemRepo)
     {
-        _db = db;
+        _cartRepo = cartRepo;
+        _itemRepo = itemRepo;
     }
 
-    public async Task<Cart> GetOrCreateCart(long userId)
+    public async Task<CartDto> GetOrCreateCart(long userId)
     {
-        var cart = await _db.Carts
-            .Include(x => x.Items)
-            .FirstOrDefaultAsync(x => x.UserId == userId);
-
-        if (cart == null)
+        var cart = await _cartRepo.GetByUserId(userId);
+        if (cart is null)
         {
             cart = new Cart { UserId = userId };
-            _db.Carts.Add(cart);
-            await _db.SaveChangesAsync();
+            cart = await _cartRepo.AddAsync(cart);
         }
-
-        return cart;
+        return CartMapper.ToDto(cart);
     }
 
-    public async Task AddItem(long userId, CartItem item)
+    public async Task AddItem(long userId, AddToCartDto dto)
     {
-        var cart = await GetOrCreateCart(userId);
+        var cart = await _cartRepo.GetByUserId(userId);
+        if (cart is null)
+        {
+            cart = new Cart { UserId = userId };
+            cart = await _cartRepo.AddAsync(cart);
+        }
 
-        item.CartId = cart.Id;
-        _db.CartItems.Add(item);
+        var item = new CartItem
+        {
+            CartId = cart.Id,
+            StoreId = dto.StoreId,
+            ProductId = dto.ProductId,
+            ServiceId = dto.ServiceId,
+            Name = dto.Name,
+            Price = dto.Price,
+            Quantity = dto.Quantity,
+            BookingTime = dto.BookingTime
+        };
 
-        await _db.SaveChangesAsync();
+        await _itemRepo.AddAsync(item);
     }
 
     public async Task RemoveItem(long itemId)
     {
-        var item = await _db.CartItems.FindAsync(itemId);
-        if (item == null) return;
+        await _itemRepo.RemoveByIdAsync(itemId);
+    }
 
-        _db.CartItems.Remove(item);
-        await _db.SaveChangesAsync();
+    public async Task ClearCart(long userId)
+    {
+        var cart = await _cartRepo.GetByUserId(userId);
+        if (cart is null) return;
+
+        foreach (var item in cart.Items.ToList())
+        {
+            await _itemRepo.RemoveByIdAsync(item.Id);
+        }
     }
 }

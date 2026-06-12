@@ -1,9 +1,6 @@
-using Core.Entities;
-using Core.Enums;
 using Microsoft.AspNetCore.Mvc;
+using Services.DTOs;
 using Services.Implementations;
-using WebAPI.DTOs;
-using WebAPI.Mapping;
 
 namespace WebAPI.Controllers;
 
@@ -13,43 +10,50 @@ public class UserController : ControllerBase
 {
     private readonly UserService _service;
 
-    public UserController(UserService service)
-    {
-        _service = service;
-    }
+    public UserController(UserService service) => _service = service;
 
     [HttpGet]
     public async Task<List<UserDto>> GetAll()
     {
-        var users = await _service.GetAllAsync();
-        return users.Select(UserMapper.ToDto).ToList();
+        return await _service.GetAllAsync();
+    }
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult<UserDto>> GetById(long id)
+    {
+        var user = await _service.GetByIdAsync(id);
+        if (user == null) return NotFound();
+        return user;
     }
 
     [HttpGet("telegram/{telegramId}")]
-    public async Task<UserDto?> GetByTelegram(long telegramId)
+    public async Task<ActionResult<UserDto>> GetByTelegram(long telegramId)
     {
         var user = await _service.GetByTelegramId(telegramId);
-        return UserMapper.ToDto(user);
+        if (user == null) return NotFound();
+        return user;
     }
 
     [HttpPost("sync")]
-    public async Task<UserDto> Sync(UserDto dto)
+    public async Task<ActionResult<UserDto>> Sync([FromBody] SyncUserDto dto)
     {
-        var user = await _service.GetByTelegramId(dto.TelegramId);
+        var user = await _service.SyncAsync(dto);
+        return CreatedAtAction(nameof(GetById), new { id = user.Id }, user);
+    }
 
-        if (user == null)
-        {
-            user = new User
-            {
-                TelegramId = dto.TelegramId,
-                Username = dto.Username,
-                FirstName = dto.FirstName,
-                Role = UserRole.Client
-            };
+    [HttpPut("{id}")]
+    public async Task<ActionResult<UserDto>> Update(long id, [FromBody] UpdateUserDto dto)
+    {
+        var user = await _service.UpdateAsync(id, dto);
+        if (user == null) return NotFound();
+        return user;
+    }
 
-            await _service.CreateAsync(user);
-        }
-
-        return UserMapper.ToDto(user);
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(long id)
+    {
+        var result = await _service.DeleteAsync(id);
+        if (!result) return NotFound();
+        return NoContent();
     }
 }
