@@ -1,0 +1,300 @@
+=============================================================
+  BEKOBOD 24 – API REFERENCE
+  Base URL: http://localhost:5000
+=============================================================
+
+---- ENUMS ----
+
+StoreType (int):
+  1 = Market
+  2 = Restaurant
+  3 = Pharmacy
+  4 = Electronics
+  5 = Service
+
+OrderStatus (int):
+  1 = Pending
+  2 = Accepted
+  3 = Preparing
+  4 = OnTheWay
+  5 = Completed
+  6 = Cancelled
+
+UserRole (int):
+  1 = Client
+  2 = Admin
+  3 = Courier
+
+
+=============================================================
+  STORES  (/api/stores)
+=============================================================
+
+GET  /api/stores?type={type}
+  Query: type (optional, StoreType int)
+  Response: List<StoreDto>
+
+GET  /api/stores/{id}
+  Response: StoreDto | 404
+
+POST /api/stores
+  Body: CreateStoreDto
+  Response: 201 → StoreDto
+
+PUT  /api/stores/{id}
+  Body: UpdateStoreDto
+  Response: StoreDto | 404
+
+DEL  /api/stores/{id}
+  Response: 204 | 404
+
+--- DTOs ---
+StoreDto:
+  { "id": long, "name": string, "type": string,
+    "imageId": "guid|null", "imageUrl": "string|null",
+    "isActive": bool }
+
+CreateStoreDto:
+  { "name": string, "type": int, "imageId": "guid|null" }
+
+UpdateStoreDto:
+  { "name": string, "type": int, "imageId": "guid|null",
+    "isActive": bool }
+
+
+=============================================================
+  PRODUCTS  (/api/products)
+=============================================================
+
+GET  /api/products?storeId={storeId}
+  Query: storeId (optional long)
+  Response: List<ProductDto>
+
+GET  /api/products/{id}
+  Response: ProductDto | 404
+
+POST /api/products
+  Body: CreateProductDto
+  Response: 201 → ProductDto
+
+PUT  /api/products/{id}
+  Body: UpdateProductDto
+  Response: ProductDto | 404
+
+DEL  /api/products/{id}
+  Response: 204 | 404
+
+--- DTOs ---
+ProductDto:
+  { "id": long, "storeId": long, "name": string,
+    "description": "string|null", "price": decimal,
+    "imageId": "guid|null", "imageUrl": "string|null",
+    "isAvailable": bool }
+
+CreateProductDto:
+  { "storeId": long, "name": string,
+    "description": "string|null", "price": decimal,
+    "imageId": "guid|null" }
+
+UpdateProductDto:
+  { "name": string, "description": "string|null",
+    "price": decimal, "imageId": "guid|null",
+    "isAvailable": bool }
+
+
+=============================================================
+  SERVICES  (/api/services)
+=============================================================
+
+GET  /api/services?storeId={storeId}
+  Query: storeId (optional long)
+  Response: List<ServiceDto>
+
+GET  /api/services/{id}
+  Response: ServiceDto | 404
+
+POST /api/services
+  Body: CreateServiceDto
+  Response: 201 → ServiceDto
+
+PUT  /api/services/{id}
+  Body: UpdateServiceDto
+  Response: ServiceDto | 404
+
+DEL  /api/services/{id}
+  Response: 204 | 404
+
+--- DTOs ---
+ServiceDto:
+  { "id": long, "storeId": long, "storeName": string,
+    "name": string, "price": decimal,
+    "description": "string|null",
+    "requiresBooking": bool }
+
+CreateServiceDto:
+  { "storeId": long, "name": string,
+    "price": decimal, "description": "string|null",
+    "requiresBooking": bool (default: true) }
+
+UpdateServiceDto:
+  { "name": string, "price": decimal,
+    "description": "string|null",
+    "requiresBooking": bool }
+
+
+=============================================================
+  CART  (/api/cart)
+=============================================================
+
+GET  /api/cart/{userId}
+  Response: CartDto
+
+POST /api/cart/{userId}/items
+  Body: AddToCartDto
+  Response: CartDto
+
+DEL  /api/cart/items/{itemId}
+  Response: 204
+
+DEL  /api/cart/{userId}
+  (Clear entire cart)
+  Response: 204
+
+--- DTOs ---
+CartDto:
+  { "id": long, "userId": long,
+    "items": [ CartItemDto ],
+    "totalPrice": decimal }
+
+CartItemDto:
+  { "id": long, "storeId": long,
+    "productId": "long|null", "serviceId": "long|null",
+    "name": string, "price": decimal,
+    "quantity": int,
+    "bookingTime": "ISO8601|null" }
+
+AddToCartDto:
+  { "storeId": long,
+    "productId": "long|null", "serviceId": "long|null",
+    "name": string, "price": decimal,
+    "quantity": int (default: 1),
+    "bookingTime": "ISO8601|null" }
+
+
+=============================================================
+  ORDERS  (/api/orders)
+=============================================================
+
+GET  /api/orders
+  Response: List<OrderDto>
+
+GET  /api/orders/{id}
+  Response: OrderDto | 404
+
+GET  /api/orders/user/{userId}
+  Response: List<OrderDto>
+
+POST /api/orders/checkout/{userId}
+  (Convert current cart to order)
+  Response: 201 → OrderDto
+
+PATCH /api/orders/{id}/status
+  Body: UpdateOrderStatusDto
+  Response: OrderDto | 400 | 404
+
+DEL  /api/orders/{id}
+  Response: 204 | 404
+
+--- DTOs ---
+OrderDto:
+  { "id": long, "userId": long,
+    "totalPrice": decimal, "status": string,
+    "createdAt": "ISO8601",
+    "items": [ OrderItemDto ] }
+
+OrderItemDto:
+  { "id": long, "storeId": long,
+    "productId": "long|null", "serviceId": "long|null",
+    "name": string, "price": decimal,
+    "quantity": int,
+    "bookingTime": "ISO8601|null" }
+
+UpdateOrderStatusDto:
+  { "status": string (e.g. "completed", "cancelled") }
+
+
+=============================================================
+  USERS  (/api/users)
+=============================================================
+
+GET  /api/users
+  Response: List<UserDto>
+
+GET  /api/users/{id}
+  Response: UserDto | 404
+
+GET  /api/users/telegram/{telegramId}
+  Response: UserDto | 404
+
+POST /api/users/sync
+  (Create or update user by Telegram data)
+  Body: SyncUserDto
+  Response: 201 → UserDto
+
+PUT  /api/users/{id}
+  Body: UpdateUserDto
+  Response: UserDto | 404
+
+DEL  /api/users/{id}
+  Response: 204 | 404
+
+--- DTOs ---
+UserDto:
+  { "id": long, "telegramId": long,
+    "username": "string|null", "firstName": "string|null",
+    "phoneNumber": "string|null",
+    "role": string ("Client"|"Admin"|"Courier"),
+    "createdAt": "ISO8601" }
+
+SyncUserDto:
+  { "telegramId": long,
+    "username": "string|null", "firstName": "string|null" }
+
+UpdateUserDto:
+  { "phoneNumber": "string|null", "firstName": "string|null" }
+
+
+=============================================================
+  FILE  (/File/[action])
+=============================================================
+
+POST /File/UploadFile
+  Multipart: file (IFormFile)
+  Response: ResponseModelBase
+
+POST /File/UploadLargeFile
+  Multipart: file (IFormFile)
+  Max size: 300 MB
+  Response: ResponseModelBase
+
+PUT  /File/ReplaceFile
+  Query: id (Guid)
+  Multipart: file (IFormFile)
+  Response: ResponseModelBase
+
+DEL  /File/Delete
+  Query: id (Guid)
+  Response: ResponseModelBase
+
+GET  /File/DownloadFile/download/{id}  [AllowAnonymous]
+  Response: File stream | 404 | 500
+
+--- DTOs ---
+ResponseModelBase:
+  { "data": ..., "statusCode": int,
+    "message": "string|null" }
+
+FileDto:
+  { "id": "guid", "fileName": string,
+    "contentType": string, "path": string,
+    "size": long }

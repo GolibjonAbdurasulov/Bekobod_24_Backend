@@ -1,0 +1,45 @@
+name: bekobod24
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: bekobod24-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bekobod24
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-3214}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bekobod24-api
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=bekobod24;Username=postgres;Password=${DB_PASSWORD:-3214}"
+      Api__InstanceBaseUrl: ${API_BASE_URL:-http://localhost:5000}
+      Bot__BotToken: ${BOT_TOKEN:-8922922524:AAEBpmWNGMnwb96yRnOKW4voKmeJIeAUmY0}
+      Bot__WebAppUrl: ${WEBAPP_URL:-}
+    ports:
+      - "${API_PORT:-8080}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - uploads_data:/app/wwwroot/uploads
+
+volumes:
+  postgres_data:
+  uploads_data:

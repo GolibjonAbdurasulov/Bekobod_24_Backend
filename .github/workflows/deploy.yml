@@ -1,0 +1,39 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create .env file
+        run: |
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "API_BASE_URL=${{ secrets.API_BASE_URL }}" >> .env
+          echo "BOT_TOKEN=${{ secrets.BOT_TOKEN }}" >> .env
+          echo "WEBAPP_URL=${{ secrets.WEBAPP_URL }}" >> .env
+          echo "API_PORT=8080" >> .env
+
+      - name: Pull latest images
+        run: docker compose pull
+
+      - name: Build and restart services
+        run: |
+          docker compose up -d --build --remove-orphans
+          docker image prune -f
+
+      - name: Health check
+        run: |
+          timeout 60 bash -c 'while [[ "$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/swagger)" != "200" ]]; do sleep 5; done' || echo "Health check timed out"
+          curl -s http://localhost:8080/api/stores || echo "API not ready yet"
+
+      - name: Cleanup old images
+        run: docker system prune -f --filter "until=24h"
